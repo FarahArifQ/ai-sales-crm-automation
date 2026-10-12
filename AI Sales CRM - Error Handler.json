@@ -1,0 +1,67 @@
+{
+  "name": "AI Sales CRM - Error Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "35dc4676-82bc-4cc9-b0a2-6cb4065d815f",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "sendTo": "faraharifqureshi@gmail.com",
+        "subject": "🚨 AI Sales CRM Workflow Error",
+        "emailType": "text",
+        "message": "=CRM automation failed.  \n\nWorkflow: {{ $json.workflow.name }} \n\nExecution ID: {{ $json.execution.id }}  \n\nError: {{ $json.execution.error.message }} \n\nPlease check the failed execution in n8n.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "a8b3626b-e40b-4b71-834e-093aaad98e76",
+      "name": "Send a message",
+      "webhookId": "672c8f21-0e26-4ec5-8d03-9f5a0a7f3635",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "isGTIScxmvwBi0f0",
+          "name": "Gmail account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b6f16974-129d-4187-9c67-f2d794631132",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "47d0139414a25def0a595731e1ef68853b3fe99f058fea3c6a4c81f84227ea80"
+  },
+  "nodeGroups": [],
+  "id": "O00rEZ0eeS4FBlwA",
+  "tags": []
+}

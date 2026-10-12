@@ -1,0 +1,1843 @@
+{
+  "name": "AI Sales CRM - Lead Intake",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Sales Inquiry Form",
+        "formDescription": "Tell us about your project and we’ll get back to you.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Full Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Phone number"
+            },
+            {
+              "fieldLabel": "Company Name"
+            },
+            {
+              "fieldLabel": "Lead Message",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Company Website"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -896,
+        16
+      ],
+      "id": "fcdaf8ce-3b39-44d1-bf0e-af9d940ba296",
+      "name": "Lead Intake Form",
+      "webhookId": "ea64c2d6-d2c1-4631-b5cb-27dbb84cde0a"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "199fec52-7b96-4231-9e12-61df783c903b",
+              "name": "leadName",
+              "value": "={{ $json['Full Name'] }}",
+              "type": "string"
+            },
+            {
+              "id": "4d173964-3ba7-42f5-9440-9b14d427d7e7",
+              "name": "leadEmail",
+              "value": "={{ $json.Email }}",
+              "type": "string"
+            },
+            {
+              "id": "5decdd43-e7f0-4350-a321-840f555758a0",
+              "name": "leadPhone",
+              "value": "={{ $json['Phone number'] }}",
+              "type": "string"
+            },
+            {
+              "id": "fefb175c-b198-4077-bc81-f9925df2f069",
+              "name": "companyName",
+              "value": "={{ $json['Company Name'] }}",
+              "type": "string"
+            },
+            {
+              "id": "a3f79556-acec-48d5-8224-3a054d546f31",
+              "name": "leadMessage",
+              "value": "={{ $json['Lead Message'] }}",
+              "type": "string"
+            },
+            {
+              "id": "a076051c-fbc0-4a77-b057-91dc72f03675",
+              "name": "leadSource",
+              "value": "Website Form",
+              "type": "string"
+            },
+            {
+              "id": "88b1b772-7179-41f6-b44f-c1c25dbac563",
+              "name": "createdAt",
+              "value": "={{ $now }}",
+              "type": "string"
+            },
+            {
+              "id": "22838e72-c966-4685-803e-c5317a258d36",
+              "name": "companyWebsite",
+              "value": "={{ $json[\"Company Website\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "a3f8cba3-975d-4cd9-841a-5737810ff278",
+              "name": "companyDomain",
+              "value": "={{   ($json[\"Company Website\"] || \"\")     .replace(/^https?:\\/\\//, \"\")     .replace(/^www\\./, \"\")     .split(\"/\")[0] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -624,
+        16
+      ],
+      "id": "6d33e9d5-b9bd-4516-8c1a-f5868db5f4fe",
+      "name": "Normalize Lead Data"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.5-flash-lite",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.5-flash-lite"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"You are a B2B lead qualification assistant. Analyze the lead message and respond ONLY with valid JSON. Do not use markdown, code fences, or extra explanation.\\n\\nReturn exactly this structure:\\n{\\n  \\\"classification\\\": \\\"Hot|Warm|Cold|Needs Review\\\",\\n  \\\"score\\\": 0,\\n  \\\"serviceInterest\\\": \\\"\\\",\\n  \\\"urgency\\\": \\\"High|Medium|Low|Unknown\\\",\\n  \\\"budgetSignal\\\": \\\"Positive|Neutral|Negative|Unknown\\\",\\n  \\\"purchaseIntent\\\": \\\"Strong|Moderate|Weak|Unknown\\\",\\n  \\\"reasoning\\\": \\\"\\\"\\n}\\n\\nRules:\\n- classification must be one of: Hot, Warm, Cold, Needs Review\\n- score must be a number from 0 to 100\\n- serviceInterest should briefly identify what the lead likely wants (for example: Website Redesign, Branding, Automation, Mobile App, Unknown)\\n- urgency should reflect how soon they seem to want action\\n- budgetSignal should reflect whether they seem serious about paying\\n- purchaseIntent should reflect how likely they are to move forward soon\\n- reasoning should be one concise sentence\\n\\nLead details:\\nName: {{ $('Normalize Lead Data').item.json.leadName }}\\nCompany: {{ $('Normalize Lead Data').item.json.companyName }}\\nEmail: {{ $('Normalize Lead Data').item.json.leadEmail }}\\nMessage: {{ $('Normalize Lead Data').item.json.leadMessage }}\"\n        }\n      ]\n    }\n  ]\n}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -368,
+        16
+      ],
+      "id": "1f2bb517-2121-4431-abe0-5b3ae4bbcc73",
+      "name": "Qualify Lead with Gemini",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "pzefcqB0UNfIZDu0",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Get Gemini's text response.\n// Handles both common Gemini response shapes.\nconst raw =\n  $json.content?.parts?.[0]?.text ??\n  $json.candidates?.[0]?.content?.parts?.[0]?.text ??\n  '';\n\n// 2. Clean the response in case Gemini wraps JSON in ```json ... ```\nlet cleaned = raw\n  .trim()\n  .replace(/^```json\\s*/i, '')\n  .replace(/^```\\s*/i, '')\n  .replace(/\\s*```$/i, '')\n  .trim();\n\n// 3. Try to convert the JSON text into a real JavaScript object.\nlet parsed;\n\ntry {\n  parsed = JSON.parse(cleaned);\n} catch (error) {\n  parsed = {\n    classification: 'Needs Review',\n    score: 0,\n    serviceInterest: 'Unknown',\n    urgency: 'Unknown',\n    budgetSignal: 'Unknown',\n    purchaseIntent: 'Unknown',\n    reasoning: 'Gemini response could not be parsed properly.'\n  };\n}\n\n// 4. Helper function to make sure Gemini only returns allowed values.\nconst normalize = (value, allowed, fallback) => {\n  if (!value) return fallback;\n\n  const match = allowed.find(\n    option =>\n      option.toLowerCase() === String(value).trim().toLowerCase()\n  );\n\n  return match || fallback;\n};\n\n// 5. Validate classification.\nconst classification = normalize(\n  parsed.classification,\n  ['Hot', 'Warm', 'Cold', 'Needs Review'],\n  'Needs Review'\n);\n\n// 6. Validate urgency.\nconst urgency = normalize(\n  parsed.urgency,\n  ['High', 'Medium', 'Low', 'Unknown'],\n  'Unknown'\n);\n\n// 7. Validate budget signal.\nconst budgetSignal = normalize(\n  parsed.budgetSignal,\n  ['Positive', 'Neutral', 'Negative', 'Unknown'],\n  'Unknown'\n);\n\n// 8. Validate purchase intent.\nconst purchaseIntent = normalize(\n  parsed.purchaseIntent,\n  ['Strong', 'Moderate', 'Weak', 'Unknown'],\n  'Unknown'\n);\n\n// 9. Make sure score is a valid number between 0 and 100.\nlet score = Number(parsed.score);\n\nif (Number.isNaN(score)) score = 0;\n\nscore = Math.max(0, Math.min(100, score));\n\n// 10. Return one clean object containing both lead data and AI analysis.\nreturn [\n  {\n    json: {\n      leadName: $('Normalize Lead Data').item.json.leadName,\n      leadEmail: $('Normalize Lead Data').item.json.leadEmail,\n      leadPhone: $('Normalize Lead Data').item.json.leadPhone,\n      companyName: $('Normalize Lead Data').item.json.companyName,\n      companyWebsite: $('Normalize Lead Data').item.json.companyWebsite,\ncompanyDomain: $('Normalize Lead Data').item.json.companyDomain,\n      leadMessage: $('Normalize Lead Data').item.json.leadMessage,\n      leadSource: $('Normalize Lead Data').item.json.leadSource,\n      createdAt: $('Normalize Lead Data').item.json.createdAt,\n\n      classification,\n      leadScore: score,\n      serviceInterest: parsed.serviceInterest || 'Unknown',\n      urgency,\n      budgetSignal,\n      purchaseIntent,\n      reasoning: parsed.reasoning || 'No reasoning returned.'\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        16
+      ],
+      "id": "ef378b10-647d-4697-8327-d79e0a52f4a5",
+      "name": "Parse AI Qualification"
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "email": "={{ $json.leadEmail }}",
+        "additionalFields": {
+          "companyName": "={{ $json.companyName }}",
+          "firstName": "={{ $json.firstName }}",
+          "lastName": "={{ $json.lastName }}",
+          "leadStatus": "={{\n  $('Prepare CRM Data').item.json.classification === 'Hot'\n    ? 'IN_PROGRESS'\n    : $('Prepare CRM Data').item.json.classification === 'Warm'\n      ? 'OPEN'\n      : 'NEW'\n}}",
+          "lifeCycleStage": "={{ 'lead' }}",
+          "phoneNumber": "={{ $('Parse AI Qualification').item.json.leadPhone }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        16
+      ],
+      "id": "e62dc190-ada1-4cd9-ac0f-54d20163d169",
+      "name": "Create or update a contact",
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "wfiheLb3TqsIouBQ",
+          "name": "HubSpot -CRM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "faeaba3b-6754-43ec-bd09-fe262d4a48f1",
+              "name": "firstName",
+              "value": "={{ $json.leadName.split(' ')[0] }}",
+              "type": "string"
+            },
+            {
+              "id": "3463e02d-8ef7-4964-9bcb-fc07659a8743",
+              "name": "lastName",
+              "value": "={{ $json.leadName.split(' ').slice(1).join(' ') }}",
+              "type": "string"
+            },
+            {
+              "id": "73628e85-ec57-484a-9f65-07f42fa468f1",
+              "name": "leadEmail",
+              "value": "={{ $json.leadEmail }}",
+              "type": "string"
+            },
+            {
+              "id": "85aed4ee-9005-4b24-9490-e357bdc9f126",
+              "name": "leadPhone",
+              "value": "={{ $json.leadPhone }}",
+              "type": "string"
+            },
+            {
+              "id": "91286855-e924-4bd4-9a7e-5ce745261955",
+              "name": "companyName",
+              "value": "={{ $json.companyName }}",
+              "type": "string"
+            },
+            {
+              "id": "c5c61394-b27e-4534-b491-3d5265669c44",
+              "name": "leadMessage",
+              "value": "={{ $json.leadMessage }}",
+              "type": "string"
+            },
+            {
+              "id": "103c228b-ec15-4ebc-95da-3d0eefb7a497",
+              "name": "leadSource",
+              "value": "={{ $json.leadSource }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        240,
+        16
+      ],
+      "id": "0951e300-a88d-46c9-888b-2437dbc6f4d0",
+      "name": "Prepare CRM Data"
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "resource": "deal",
+        "stage": "qualifiedtobuy",
+        "additionalFields": {
+          "amount": "=",
+          "associatedCompany": "={{ $('Company Context').item.json.companyId }}",
+          "associatedVids": "={{ $('Create or update a contact').item.json.vid }}",
+          "customPropertiesUi": {
+            "customPropertiesValues": [
+              {
+                "property": "ai_lead_classification",
+                "value": "={{ $('Prepare CRM Data').item.json.classification }}"
+              },
+              {
+                "property": "ai_lead_score",
+                "value": "={{ $('Prepare CRM Data').item.json.leadScore }}"
+              },
+              {
+                "property": "service_interest",
+                "value": "={{ $('Prepare CRM Data').item.json.serviceInterest }}"
+              },
+              {
+                "property": "lead_urgency",
+                "value": "={{ $('Prepare CRM Data').item.json.urgency }}"
+              },
+              {
+                "property": "budget_signal",
+                "value": "={{ $('Prepare CRM Data').item.json.budgetSignal }}"
+              },
+              {
+                "property": "purchase_intent",
+                "value": "={{ $('Prepare CRM Data').item.json.purchaseIntent }}"
+              },
+              {
+                "property": "ai_qualification_reason",
+                "value": "={{ $('Prepare CRM Data').item.json.reasoning }}"
+              },
+              {
+                "property": "original_lead_message",
+                "value": "={{ $('Prepare CRM Data').item.json.leadMessage }}"
+              },
+              {
+                "property": "lead_source",
+                "value": "={{ $('Prepare CRM Data').item.json.leadSource }}"
+              },
+              {
+                "property": "ai_draft_reply"
+              }
+            ]
+          },
+          "dealName": "={{ $('Prepare CRM Data').item.json.companyName + ' - ' + $('Prepare CRM Data').item.json.serviceInterest }}"
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        -304
+      ],
+      "id": "129cc0e1-5396-443b-9e8f-dc7301d8a3ad",
+      "name": "Create Qualified Deal",
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "wfiheLb3TqsIouBQ",
+          "name": "HubSpot -CRM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Prepare CRM Data').item.json.classification }}",
+                    "rightValue": "Hot",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "c9768623-b1b4-4d9f-93b8-f49d001cf5bf"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Hot"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "338226bd-14f2-4c0d-956a-12c052f8f885",
+                    "leftValue": "={{ $('Prepare CRM Data').item.json.classification }}",
+                    "rightValue": "Warm",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Warm"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a25f22f4-cb42-493d-8904-e648af4a284e",
+                    "leftValue": "={{ $('Prepare CRM Data').item.json.classification }}",
+                    "rightValue": "Cold",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Cold"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "bc2744f7-ff67-4ece-8cfe-1416054cc52f",
+                    "leftValue": "={{ $('Prepare CRM Data').item.json.classification }}",
+                    "rightValue": "Needs Review",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Needs Review"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1776,
+        0
+      ],
+      "id": "ee14a625-fa53-4320-8318-26e822313a7c",
+      "name": "Route Lead by Classification"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a87eb368-1599-48e7-91e6-ea00f589e77c",
+              "name": "draftReply",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2688,
+        -304
+      ],
+      "id": "c3b8c4f3-6f38-400d-961c-c1884b92242c",
+      "name": "Prepare Hot Lead Action"
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "resource": "deal",
+        "operation": "update",
+        "dealId": {
+          "__rl": true,
+          "value": "={{ $('Create Qualified Deal').item.json.dealId }}",
+          "mode": "id"
+        },
+        "updateFields": {
+          "customPropertiesUi": {
+            "customPropertiesValues": [
+              {
+                "property": "ai_draft_reply",
+                "value": "={{ $json.draftReply }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        2848,
+        -304
+      ],
+      "id": "681f57e7-3557-4579-a424-7539c72c7268",
+      "name": "Update Deal with AI Reply",
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "wfiheLb3TqsIouBQ",
+          "name": "HubSpot -CRM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "resource": "engagement",
+        "type": "task",
+        "dueDate": "={{ $now }}",
+        "metadata": {
+          "body": "=Follow up with {{ $('Prepare CRM Data').item.json.leadName }} — HOT lead. Lead score: {{ $('Prepare CRM Data').item.json.leadScore }}/100. Service: {{ $('Prepare CRM Data').item.json.serviceInterest }}.",
+          "forObjectType": "CONTACT",
+          "status": "NOT_STARTED"
+        },
+        "additionalFields": {
+          "associations": {
+            "contactIds": "={{ $('Create Qualified Deal').item.json.associations.associatedVids[0] }}",
+            "dealIds": "={{ $('Create Qualified Deal').item.json.dealId }}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        3008,
+        -304
+      ],
+      "id": "9724e59d-0a3e-4652-b9a6-a1b3a19b6b59",
+      "name": "Create an engagement",
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "wfiheLb3TqsIouBQ",
+          "name": "HubSpot -CRM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "faraharifqureshi@gmail.com",
+        "subject": "=🔥 HOT LEAD — {{ $('Prepare CRM Data').item.json.leadName }}",
+        "message": "=<h2>🔥 HOT LEAD DETECTED</h2>\n\n<p><strong>Name:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadName }}</p>\n\n<p><strong>Company:</strong><br>\n{{ $('Prepare CRM Data').item.json.companyName }}</p>\n\n<p><strong>Contact:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadEmail }}</p>\n\n<hr>\n\n<p><strong>Service:</strong><br>\n{{ $('Prepare CRM Data').item.json.serviceInterest }}</p>\n\n<p><strong>Lead Score:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadScore }}/100</p>\n\n<p><strong>Urgency:</strong><br>\n{{ $('Prepare CRM Data').item.json.urgency }}</p>\n\n<p><strong>Purchase Intent:</strong><br>\n{{ $('Prepare CRM Data').item.json.purchaseIntent }}</p>\n\n<hr>\n\n<p><strong>Why AI qualified this lead:</strong><br>\n{{ $('Prepare CRM Data').item.json.reasoning }}</p>\n\n<p><strong>Original Message:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadMessage }}</p>\n\n<hr>\n\n<p><strong>Suggested Reply:</strong></p>\n\n<blockquote>\n{{ $('Prepare Hot Lead Action').item.json.draftReply }}\n</blockquote>\n\n<p><strong>Recommended Action:</strong><br>\nRespond as soon as possible.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3232,
+        -304
+      ],
+      "id": "7aaa6cd1-15a3-4f05-820d-68627ef787df",
+      "name": "Hot Lead Alert",
+      "webhookId": "b89b2188-e027-4a44-8823-e30c50cb379d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "isGTIScxmvwBi0f0",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "faraharifqureshi@gmail.com",
+        "subject": "={{ '🟠 WARM LEAD [' + $('Prepare CRM Data').item.json.leadScore + '/100] — ' + $('Prepare CRM Data').item.json.leadName }}",
+        "message": "=<h2>🟠 WARM LEAD DETECTED</h2>\n\n<p><strong>Name:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadName }}</p>\n\n<p><strong>Company:</strong><br>\n{{ $('Prepare CRM Data').item.json.companyName }}</p>\n\n<p><strong>Contact:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadEmail }}</p>\n\n<hr>\n\n<p><strong>Service:</strong><br>\n{{ $('Prepare CRM Data').item.json.serviceInterest }}</p>\n\n<p><strong>Lead Score:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadScore }}/100</p>\n\n<p><strong>Urgency:</strong><br>\n{{ $('Prepare CRM Data').item.json.urgency }}</p>\n\n<p><strong>Purchase Intent:</strong><br>\n{{ $('Prepare CRM Data').item.json.purchaseIntent }}</p>\n\n<hr>\n\n<p><strong>Why AI classified this lead:</strong><br>\n{{ $('Prepare CRM Data').item.json.reasoning }}</p>\n\n<p><strong>Original Message:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadMessage }}</p>\n\n<hr>\n\n<p><strong>Recommended Action:</strong><br>\nFollow up within 24 hours.</p>\n\n<p><strong>CRM Status:</strong><br>\nA follow-up task has already been created in HubSpot.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2272,
+        -96
+      ],
+      "id": "8c9edb31-5b9e-4f21-9604-a9931d7f0e45",
+      "name": "Warm Lead Alert",
+      "webhookId": "b89b2188-e027-4a44-8823-e30c50cb379d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "isGTIScxmvwBi0f0",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "faraharifqureshi@gmail.com",
+        "subject": "=🔵 COLD LEAD [{{ $('Prepare CRM Data').item.json.leadScore }}/100] — {{ $('Prepare CRM Data').item.json.leadName }}",
+        "message": "=<h2>🔵 COLD LEAD LOGGED</h2>\n\n<p><strong>Name:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadName }}</p>\n\n<p><strong>Company:</strong><br>\n{{ $('Prepare CRM Data').item.json.companyName }}</p>\n\n<p><strong>Contact:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadEmail }}</p>\n\n<hr>\n\n<p><strong>Service:</strong><br>\n{{ $('Prepare CRM Data').item.json.serviceInterest }}</p>\n\n<p><strong>Lead Score:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadScore }}/100</p>\n\n<p><strong>Urgency:</strong><br>\n{{ $('Prepare CRM Data').item.json.urgency }}</p>\n\n<p><strong>Purchase Intent:</strong><br>\n{{ $('Prepare CRM Data').item.json.purchaseIntent }}</p>\n\n<hr>\n\n<p><strong>Why AI classified this lead:</strong><br>\n{{ $('Prepare CRM Data').item.json.reasoning }}</p>\n\n<p><strong>Original Message:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadMessage }}</p>\n\n<hr>\n\n<p><strong>Recommended Action:</strong><br>\nNo urgent follow-up required. Keep this contact for future nurturing.</p>\n\n<p><strong>CRM Status:</strong><br>\nContact has been stored in HubSpot. No sales opportunity has been created.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        128
+      ],
+      "id": "eb0ed2bc-b8ae-4dea-83c1-72c7ddfd66bb",
+      "name": "Cold Lead Alert",
+      "webhookId": "b89b2188-e027-4a44-8823-e30c50cb379d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "isGTIScxmvwBi0f0",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "resource": "engagement",
+        "type": "task",
+        "dueDate": "={{ $now.plus({ hours: 2 }) }}",
+        "metadata": {
+          "body": "=MANUAL LEAD REVIEW REQUIRED  Lead: {{ $('Prepare CRM Data').item.json.leadName }} Company: {{ $('Prepare CRM Data').item.json.companyName }}  Lead Score: {{ $('Prepare CRM Data').item.json.leadScore }}/100 Service Interest: {{ $('Prepare CRM Data').item.json.serviceInterest }} Urgency: {{ $('Prepare CRM Data').item.json.urgency }} Budget Signal: {{ $('Prepare CRM Data').item.json.budgetSignal }} Purchase Intent: {{ $('Prepare CRM Data').item.json.purchaseIntent }}  AI Reasoning: {{ $('Prepare CRM Data').item.json.reasoning }}  Original Message: {{ $('Prepare CRM Data').item.json.leadMessage }}  ACTION: Review this inquiry manually and decide whether the lead should be qualified, followed up, or left for nurturing."
+        },
+        "additionalFields": {
+          "associations": {
+            "contactIds": "={{ $('Route Lead by Classification').item.json.vid }}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        352
+      ],
+      "id": "ee68a4fd-e247-4182-85dd-91ae6ea38669",
+      "name": "Manual Review Task",
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "wfiheLb3TqsIouBQ",
+          "name": "HubSpot -CRM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "faraharifqureshi@gmail.com",
+        "subject": "=⚠️ MANUAL REVIEW [{{ $('Prepare CRM Data').item.json.leadScore }}/100] — {{ $('Prepare CRM Data').item.json.leadName }}",
+        "message": "=<h2>⚠️ MANUAL LEAD REVIEW REQUIRED</h2>\n\n<p><strong>Name:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadName }}</p>\n\n<p><strong>Company:</strong><br>\n{{ $('Prepare CRM Data').item.json.companyName }}</p>\n\n<p><strong>Contact:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadEmail }}</p>\n\n<hr>\n\n<p><strong>Service Interest:</strong><br>\n{{ $('Prepare CRM Data').item.json.serviceInterest }}</p>\n\n<p><strong>Lead Score:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadScore }}/100</p>\n\n<p><strong>Urgency:</strong><br>\n{{ $('Prepare CRM Data').item.json.urgency }}</p>\n\n<p><strong>Budget Signal:</strong><br>\n{{ $('Prepare CRM Data').item.json.budgetSignal }}</p>\n\n<p><strong>Purchase Intent:</strong><br>\n{{ $('Prepare CRM Data').item.json.purchaseIntent }}</p>\n\n<hr>\n\n<p><strong>Why AI could not confidently qualify this lead:</strong><br>\n{{ $('Prepare CRM Data').item.json.reasoning }}</p>\n\n<p><strong>Original Message:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadMessage }}</p>\n\n<hr>\n\n<p><strong>Recommended Action:</strong><br>\nReview the lead manually before deciding whether it should enter the sales pipeline.</p>\n\n<p><strong>CRM Status:</strong><br>\nA manual review task has been created in HubSpot.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2272,
+        352
+      ],
+      "id": "11be6e5b-d139-4e0b-a818-f6a9c91a4523",
+      "name": "Needs Review Alert",
+      "webhookId": "b89b2188-e027-4a44-8823-e30c50cb379d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "isGTIScxmvwBi0f0",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 10,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3456,
+        -304
+      ],
+      "id": "2b2190ef-5770-433f-a096-f3a07ac35063",
+      "name": "Wait for Hot Lead SLA",
+      "webhookId": "f0ed360c-9961-4785-a001-af7a7be4f3a6"
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "resource": "engagement",
+        "operation": "get",
+        "engagementId": {
+          "__rl": true,
+          "value": "={{ $('Create an engagement').item.json.engagement.id }}",
+          "mode": "id"
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        3680,
+        -304
+      ],
+      "id": "eb5668f8-0bcf-492c-ae1d-bafdbeaa1464",
+      "name": "Check Hot Lead Task",
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "wfiheLb3TqsIouBQ",
+          "name": "HubSpot -CRM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b65c4097-53b5-466c-8909-bef3debd31a9",
+              "leftValue": "={{ $json.metadata.status }}",
+              "rightValue": "COMPLETED",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3904,
+        -304
+      ],
+      "id": "28a69d6a-e7fa-481e-90c6-c90540394c91",
+      "name": "Hot Lead Followed Up?"
+    },
+    {
+      "parameters": {
+        "sendTo": "faraharifqureshi@gmail.com",
+        "subject": "=🚨 HOT LEAD MISSED SLA — {{ $('Prepare CRM Data').item.json.leadName }}",
+        "message": "=<h2>🚨 HOT LEAD FOLLOW-UP OVERDUE</h2>  <p><strong>Name:</strong><br> {{ $('Prepare CRM Data').item.json.leadName }}</p>  <p><strong>Company:</strong><br> {{ $('Prepare CRM Data').item.json.companyName }}</p>  <p><strong>Contact:</strong><br> {{ $('Prepare CRM Data').item.json.leadEmail }}</p>  <hr>  <p><strong>Lead Score:</strong><br> {{ $('Prepare CRM Data').item.json.leadScore }}/100</p>  <p><strong>Service:</strong><br> {{ $('Prepare CRM Data').item.json.serviceInterest }}</p>  <p><strong>Urgency:</strong><br> {{ $('Prepare CRM Data').item.json.urgency }}</p>  <p><strong>Purchase Intent:</strong><br> {{ $('Prepare CRM Data').item.json.purchaseIntent }}</p>  <hr>  <p><strong>AI Qualification Reason:</strong><br> {{ $('Prepare CRM Data').item.json.reasoning }}</p>  <p><strong>Original Message:</strong><br> {{ $('Prepare CRM Data').item.json.leadMessage }}</p>  <hr>  <p><strong>⚠️ SLA Warning:</strong><br> This Hot lead's follow-up task has not been marked completed within the expected response window.</p>  <p><strong>Required Action:</strong><br> Review and contact this lead immediately.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4128,
+        -288
+      ],
+      "id": "7c4fcc94-99a1-443b-98d1-d693868a873a",
+      "name": "Hot Lead Escalation Alert",
+      "webhookId": "47e3d847-2714-44ce-8f3f-0abdd721678c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "isGTIScxmvwBi0f0",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 24,
+        "unit": "hours"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2544,
+        -96
+      ],
+      "id": "2dc35416-2326-42c6-9079-6e0ff73403a5",
+      "name": "Wait for Warm Lead SLA1",
+      "webhookId": "f0ed360c-9961-4785-a001-af7a7be4f3a6"
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "resource": "engagement",
+        "operation": "get",
+        "engagementId": {
+          "__rl": true,
+          "value": "={{ $('Warm Lead Follow-up Task').item.json.engagement.id }}",
+          "mode": "id"
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        2768,
+        -96
+      ],
+      "id": "c0947e7d-2088-4b5e-89f4-014d32568731",
+      "name": "Check Warm Lead Task",
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "wfiheLb3TqsIouBQ",
+          "name": "HubSpot -CRM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "resource": "engagement",
+        "type": "task",
+        "dueDate": "={{ $now.plus({ hours: 24 }) }}",
+        "metadata": {
+          "body": "=WARM LEAD FOLLOW-UP\n\nLead: {{ $('Prepare CRM Data').item.json.leadName }}\nCompany: {{ $('Prepare CRM Data').item.json.companyName }}\nLead Score: {{ $('Prepare CRM Data').item.json.leadScore }}/100\nService: {{ $('Prepare CRM Data').item.json.serviceInterest }}\nUrgency: {{ $('Prepare CRM Data').item.json.urgency }}\n\nAI Reasoning:\n{{ $('Prepare CRM Data').item.json.reasoning }}\n\nOriginal Message:\n{{ $('Prepare CRM Data').item.json.leadMessage }}\n\nAction:\nReview the inquiry and follow up within 24 hours.",
+          "status": "NOT_STARTED"
+        },
+        "additionalFields": {
+          "associations": {
+            "contactIds": "={{ $('Route Lead by Classification').item.json.vid }}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        -96
+      ],
+      "id": "1169ee36-5a58-40bb-b1bf-a4ccae28bc6f",
+      "name": "Warm Lead Follow-up Task",
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "wfiheLb3TqsIouBQ",
+          "name": "HubSpot -CRM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b65c4097-53b5-466c-8909-bef3debd31a9",
+              "leftValue": "={{ $json.metadata.status }}",
+              "rightValue": "COMPLETED",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3008,
+        -96
+      ],
+      "id": "b6865fc1-712f-4709-82a0-61cffca9602c",
+      "name": "Warm Lead Followed Up?"
+    },
+    {
+      "parameters": {
+        "sendTo": "faraharifqureshi@gmail.com",
+        "subject": "=🟠 FOLLOW-UP OVERDUE — {{ $('Prepare CRM Data').item.json.leadName }}",
+        "message": "=<h2>🟠 WARM LEAD FOLLOW-UP OVERDUE</h2>\n\n<p><strong>Name:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadName }}</p>\n\n<p><strong>Company:</strong><br>\n{{ $('Prepare CRM Data').item.json.companyName }}</p>\n\n<p><strong>Contact:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadEmail }}</p>\n\n<hr>\n\n<p><strong>Service:</strong><br>\n{{ $('Prepare CRM Data').item.json.serviceInterest }}</p>\n\n<p><strong>Lead Score:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadScore }}/100</p>\n\n<p><strong>Urgency:</strong><br>\n{{ $('Prepare CRM Data').item.json.urgency }}</p>\n\n<p><strong>Purchase Intent:</strong><br>\n{{ $('Prepare CRM Data').item.json.purchaseIntent }}</p>\n\n<hr>\n\n<p><strong>AI Reasoning:</strong><br>\n{{ $('Prepare CRM Data').item.json.reasoning }}</p>\n\n<p><strong>Original Message:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadMessage }}</p>\n\n<hr>\n\n<p><strong>⚠️ Follow-up Status:</strong><br>\nThe Warm lead follow-up task has not been completed within the required response window.</p>\n\n<p><strong>Recommended Action:</strong><br>\nReview and contact this lead as soon as possible.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3232,
+        -80
+      ],
+      "id": "f6bbf125-0634-4aae-8d2d-29bdecf15a3d",
+      "name": "Warm Lead Follow-up Reminder",
+      "webhookId": "47e3d847-2714-44ce-8f3f-0abdd721678c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "isGTIScxmvwBi0f0",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "hours"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2480,
+        352
+      ],
+      "id": "8a8b1956-1e91-41fb-9db0-8ac83fbe065a",
+      "name": "Wait for Needs Review Lead SLA",
+      "webhookId": "f0ed360c-9961-4785-a001-af7a7be4f3a6"
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "resource": "engagement",
+        "operation": "get",
+        "engagementId": {
+          "__rl": true,
+          "value": "={{ $('Needs Review Alert').item.json.engagement.id }}",
+          "mode": "id"
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        2688,
+        352
+      ],
+      "id": "eeefe357-5ea3-4f42-ba95-eb5842a3866b",
+      "name": "Check Manual Review Task",
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "wfiheLb3TqsIouBQ",
+          "name": "HubSpot -CRM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b65c4097-53b5-466c-8909-bef3debd31a9",
+              "leftValue": "={{ $json.metadata.status }}",
+              "rightValue": "COMPLETED",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2912,
+        352
+      ],
+      "id": "e0f841f7-3075-4470-9bdb-7d414718390b",
+      "name": "Manual Review Completed?"
+    },
+    {
+      "parameters": {
+        "sendTo": "faraharifqureshi@gmail.com",
+        "subject": "=⚠️ MANUAL REVIEW OVERDUE — {{ $('Prepare CRM Data').item.json.leadName }}",
+        "message": "=<h2>⚠️ MANUAL LEAD REVIEW OVERDUE</h2>\n\n<p><strong>Name:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadName }}</p>\n\n<p><strong>Company:</strong><br>\n{{ $('Prepare CRM Data').item.json.companyName }}</p>\n\n<p><strong>Contact:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadEmail }}</p>\n\n<hr>\n\n<p><strong>Lead Score:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadScore }}/100</p>\n\n<p><strong>Service Interest:</strong><br>\n{{ $('Prepare CRM Data').item.json.serviceInterest }}</p>\n\n<p><strong>Purchase Intent:</strong><br>\n{{ $('Prepare CRM Data').item.json.purchaseIntent }}</p>\n\n<hr>\n\n<p><strong>Why AI requested human review:</strong><br>\n{{ $('Prepare CRM Data').item.json.reasoning }}</p>\n\n<p><strong>Original Message:</strong><br>\n{{ $('Prepare CRM Data').item.json.leadMessage }}</p>\n\n<hr>\n\n<p><strong>Required Action:</strong><br>\nThe manual review task is still incomplete. Review this lead and decide whether it should be qualified, followed up, or moved to nurture.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3136,
+        368
+      ],
+      "id": "b6f14776-dd7f-4b4c-b0cc-73b09e116a4d",
+      "name": "Manual Review Reminder",
+      "webhookId": "47e3d847-2714-44ce-8f3f-0abdd721678c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "isGTIScxmvwBi0f0",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 7,
+        "unit": "days"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2240,
+        128
+      ],
+      "id": "2268e676-35b2-45a9-903a-b11af7188dde",
+      "name": "Wait Before Cold Nurture",
+      "webhookId": "f0ed360c-9961-4785-a001-af7a7be4f3a6"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.5-flash-lite",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.5-flash-lite"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are assisting a B2B sales team.\n\nWrite a short, low-pressure follow-up email for a cold lead.\n\nThe lead is not currently ready to buy.\n\nRules:\n- Maximum 70 words\n- Friendly and natural\n- Do not sound aggressive or salesy\n- Do not invent pricing or offers\n- Refer naturally to their original inquiry\n- Give them an easy way to continue the conversation\n- No markdown\n- Return only the email body\n\nLead Name:\n{{ $('Prepare CRM Data').item.json.firstName }}\n\nCompany:\n{{ $('Prepare CRM Data').item.json.companyName }}\n\nService Interest:\n{{ $('Prepare CRM Data').item.json.serviceInterest }}\n\nOriginal Message:\n{{ $('Prepare CRM Data').item.json.leadMessage }}\n\ndont start with saying hi(not even their name) just get straight to the msg"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        2464,
+        128
+      ],
+      "id": "fa7af2b1-7970-4807-a416-458df9d952cd",
+      "name": "Generate Cold Nurture Reply",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "pzefcqB0UNfIZDu0",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ea6ff644-e8d6-4bf2-8ffa-15250b6e3730",
+              "name": "nurtureReply",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2832,
+        128
+      ],
+      "id": "4e18f05a-d883-4fad-90c6-fabcd85eb393",
+      "name": "Prepare Cold Nurture"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "205af1d0-13c7-41e8-81db-f01bbbbfca11",
+              "leftValue": "={{ $('Prepare CRM Data').item.json.companyDomain }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        640,
+        16
+      ],
+      "id": "a8fcc371-65a4-492b-9991-082660e095b4",
+      "name": "Company Domain Available?"
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "resource": "company",
+        "operation": "searchByDomain",
+        "domain": "={{ $('Prepare CRM Data').item.json.companyDomain }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        0
+      ],
+      "id": "fd300537-7098-46fa-b6c0-2b6155cb4a0e",
+      "name": "Find Existing Company",
+      "alwaysOutputData": true,
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "wfiheLb3TqsIouBQ",
+          "name": "HubSpot -CRM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "19510b68-3df9-4c7c-b044-ec36993af77d",
+              "leftValue": "={{ Object.keys($json).length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1056,
+        -336
+      ],
+      "id": "56e1ea94-21b8-4666-bd75-a3691186640e",
+      "name": "Company Already Exists?"
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "resource": "company",
+        "name": "={{ $('Prepare CRM Data').item.json.companyName }}",
+        "additionalFields": {
+          "customPropertiesUi": {
+            "customPropertiesValues": [
+              {
+                "property": "name",
+                "value": "={{ $('Prepare CRM Data').item.json.companyName }}"
+              },
+              {
+                "property": "domain",
+                "value": "={{ $('Prepare CRM Data').item.json.companyDomain }}"
+              },
+              {
+                "property": "website",
+                "value": "={{ $('Prepare CRM Data').item.json.companyWebsite }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        -176
+      ],
+      "id": "7e959bf6-3f3d-49b1-a78e-8a5e4ebc278d",
+      "name": "Create Company",
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "wfiheLb3TqsIouBQ",
+          "name": "HubSpot -CRM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "74625c32-ae66-4460-8103-dcba8c78269a",
+              "name": "companyId",
+              "value": "={{ $json.companyId }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1360,
+        -96
+      ],
+      "id": "bb9187eb-1b6e-46bb-8125-2e8a28abc90d",
+      "name": "Prepare New Company"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e30fd626-457a-4e07-a4c6-bfb853b49b8c",
+              "name": "companyId",
+              "value": "={{ $json.companyId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1264,
+        -352
+      ],
+      "id": "5a738ed9-5cba-4c86-8567-b610fc7052ff",
+      "name": "Prepare Existing Company"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ \n  'https://api.hubapi.com/crm/v4/objects/contacts/' \n  + $('Create or update a contact').item.json.vid\n  + '/associations/default/companies/'\n  + $json.companyId\n}}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "hubspotAppToken",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1696,
+        -224
+      ],
+      "id": "afcdc13a-289e-4cd2-8a4d-bc6680f34fb0",
+      "name": "Associate Contact with Company",
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "wfiheLb3TqsIouBQ",
+          "name": "HubSpot -CRM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2f979371-aa70-4c3e-ba73-a3ff99ede231",
+              "name": "companyId",
+              "value": "={{ $json.companyId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1520,
+        -224
+      ],
+      "id": "14152e75-84e9-447f-a94c-820883a4ae08",
+      "name": "Company Context"
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "email": "={{ $('Prepare CRM Data').item.json.leadEmail }}",
+        "additionalFields": {
+          "leadStatus": "OPEN_DEAL",
+          "lifeCycleStage": "opportunity"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        2240,
+        -304
+      ],
+      "id": "5d223215-30eb-4ce6-b594-0d071f48c5e4",
+      "name": "Mark Contact as Opportunity",
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "wfiheLb3TqsIouBQ",
+          "name": "HubSpot -CRM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.5-flash-lite",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.5-flash-lite"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are assisting a B2B salesperson.\n\nWrite a brief, natural first reply to this lead.\n\nRules:\n- Maximum 60 words\n- Friendly and professional\n- Reference what they actually asked for\n- Do not invent pricing, timelines, guarantees, or services that were not mentioned\n- End with one simple next-step question\n- Return only the reply text, no JSON and no markdown\n\nLead name:\n{{ $('Prepare CRM Data').item.json.firstName }}\n\nCompany:\n{{ $('Prepare CRM Data').item.json.companyName }}\n\nService interest:\n{{ $('Prepare CRM Data').item.json.serviceInterest }}\n\nOriginal message:\n{{ $('Prepare CRM Data').item.json.leadMessage }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        2384,
+        -304
+      ],
+      "id": "85c009c0-12d9-4df0-ae6a-ff97075615d8",
+      "name": "Generate Hot Lead Reply",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "pzefcqB0UNfIZDu0",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "faraharifqureshi@gmail.com",
+        "subject": "=Following up on your inquiry",
+        "message": "=<p>Hi {{ $('Prepare CRM Data').item.json.firstName }},</p>\n\n<p>\n{{ $('Prepare Cold Nurture').item.json.nurtureReply }}\n</p>\n\n<p>Best regards,<br>\nFarah</p>\n<p>\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3040,
+        128
+      ],
+      "id": "14b92e8e-4514-4893-9b30-4f7d7ed91a06",
+      "name": "Send Cold Nurture Email",
+      "webhookId": "47e3d847-2714-44ce-8f3f-0abdd721678c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "isGTIScxmvwBi0f0",
+          "name": "Gmail account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Lead Intake Form": {
+      "main": [
+        [
+          {
+            "node": "Normalize Lead Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Lead Data": {
+      "main": [
+        [
+          {
+            "node": "Qualify Lead with Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualify Lead with Gemini": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Qualification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Qualification": {
+      "main": [
+        [
+          {
+            "node": "Prepare CRM Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare CRM Data": {
+      "main": [
+        [
+          {
+            "node": "Create or update a contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create or update a contact": {
+      "main": [
+        [
+          {
+            "node": "Company Domain Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Lead by Classification": {
+      "main": [
+        [
+          {
+            "node": "Create Qualified Deal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Warm Lead Follow-up Task",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cold Lead Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Manual Review Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Qualified Deal": {
+      "main": [
+        [
+          {
+            "node": "Mark Contact as Opportunity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Hot Lead Action": {
+      "main": [
+        [
+          {
+            "node": "Update Deal with AI Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Deal with AI Reply": {
+      "main": [
+        [
+          {
+            "node": "Create an engagement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an engagement": {
+      "main": [
+        [
+          {
+            "node": "Hot Lead Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Review Task": {
+      "main": [
+        [
+          {
+            "node": "Needs Review Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hot Lead Alert": {
+      "main": [
+        [
+          {
+            "node": "Wait for Hot Lead SLA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Hot Lead SLA": {
+      "main": [
+        [
+          {
+            "node": "Check Hot Lead Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Hot Lead Task": {
+      "main": [
+        [
+          {
+            "node": "Hot Lead Followed Up?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hot Lead Followed Up?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Hot Lead Escalation Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Warm Lead Alert": {
+      "main": [
+        [
+          {
+            "node": "Wait for Warm Lead SLA1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Warm Lead SLA1": {
+      "main": [
+        [
+          {
+            "node": "Check Warm Lead Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Warm Lead Task": {
+      "main": [
+        [
+          {
+            "node": "Warm Lead Followed Up?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Warm Lead Follow-up Task": {
+      "main": [
+        [
+          {
+            "node": "Warm Lead Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Warm Lead Followed Up?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Warm Lead Follow-up Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs Review Alert": {
+      "main": [
+        [
+          {
+            "node": "Wait for Needs Review Lead SLA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Needs Review Lead SLA": {
+      "main": [
+        [
+          {
+            "node": "Check Manual Review Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Manual Review Task": {
+      "main": [
+        [
+          {
+            "node": "Manual Review Completed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Review Completed?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Manual Review Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cold Lead Alert": {
+      "main": [
+        [
+          {
+            "node": "Wait Before Cold Nurture",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Before Cold Nurture": {
+      "main": [
+        [
+          {
+            "node": "Generate Cold Nurture Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Cold Nurture Reply": {
+      "main": [
+        [
+          {
+            "node": "Prepare Cold Nurture",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Cold Nurture": {
+      "main": [
+        [
+          {
+            "node": "Send Cold Nurture Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Domain Available?": {
+      "main": [
+        [
+          {
+            "node": "Find Existing Company",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route Lead by Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Existing Company": {
+      "main": [
+        [
+          {
+            "node": "Company Already Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Already Exists?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Existing Company",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Company",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Company": {
+      "main": [
+        [
+          {
+            "node": "Prepare New Company",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare New Company": {
+      "main": [
+        [
+          {
+            "node": "Company Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Existing Company": {
+      "main": [
+        [
+          {
+            "node": "Company Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Associate Contact with Company": {
+      "main": [
+        [
+          {
+            "node": "Route Lead by Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Context": {
+      "main": [
+        [
+          {
+            "node": "Associate Contact with Company",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Contact as Opportunity": {
+      "main": [
+        [
+          {
+            "node": "Generate Hot Lead Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Hot Lead Reply": {
+      "main": [
+        [
+          {
+            "node": "Prepare Hot Lead Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "O00rEZ0eeS4FBlwA",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "61d35fc7-d52a-439c-8547-35d2a16f695e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "47d0139414a25def0a595731e1ef68853b3fe99f058fea3c6a4c81f84227ea80"
+  },
+  "nodeGroups": [],
+  "id": "K6LScV9dI8ZcGFrf",
+  "tags": []
+}
